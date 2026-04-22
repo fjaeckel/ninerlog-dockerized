@@ -13,10 +13,13 @@ cd ninerlog-dockerized
 cp .env.example .env
 # Edit .env — at minimum set JWT_SECRET, REFRESH_SECRET, POSTGRES_PASSWORD
 
-# 3. Start everything
+# 3. Log in to GitHub Container Registry (images are private for now)
+echo "$GITHUB_TOKEN" | docker login ghcr.io -u "$GITHUB_USER" --password-stdin
+
+# 4. Start everything
 docker compose up -d
 
-# 4. Open NinerLog
+# 5. Open NinerLog
 open http://localhost
 ```
 
