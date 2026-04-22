@@ -1,0 +1,155 @@
+services:
+  # Database (with auto-generated TLS)
+  postgres:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.postgres
+    container_name: ninerlog-db
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-ninerlog}
+      POSTGRES_USER: ${POSTGRES_USER:-ninerlog}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_ssl:/var/lib/postgresql/ssl
+    expose:
+      - "5432"
+    command:
+      - "postgres"
+      - "-c"
+      - "ssl=on"
+      - "-c"
+      - "ssl_cert_file=/var/lib/postgresql/ssl/server.crt"
+      - "-c"
+      - "ssl_key_file=/var/lib/postgresql/ssl/server.key"
+      - "-c"
+      - "log_connections=on"
+      - "-c"
+      - "log_disconnections=on"
+      - "-c"
+      - "log_statement=ddl"
+      - "-c"
+      - "password_encryption=scram-sha-256"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-ninerlog}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+      start_period: 30s
+    networks:
+      - ninerlog-network
+
+  # Backend API
+  api:
+    image: ghcr.io/fjaeckel/ninerlog-api:latest
+    container_name: ninerlog-api
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database (SSL required — self-signed cert between containers)
+      DATABASE_URL: postgresql://${POSTGRES_USER:-ninerlog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ninerlog}?sslmode=require
+
+      # Server
+      PORT: 3000
+      GIN_MODE: ${GIN_MODE:-release}
+
+      # JWT (no defaults — must be set in .env)
+      JWT_SECRET: ${JWT_SECRET}
+      REFRESH_SECRET: ${REFRESH_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-15m}
+      REFRESH_EXPIRES_IN: ${REFRESH_EXPIRES_IN:-7d}
+
+      # CORS (must match your domain)
+      CORS_ORIGIN: ${CORS_ORIGIN}
+
+      # Admin
+      ADMIN_EMAIL: ${ADMIN_EMAIL:-}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+
+      # SMTP
+      SMTP_HOST: ${SMTP_HOST:-}
+      SMTP_PORT: ${SMTP_PORT:-587}
+      SMTP_USERNAME: ${SMTP_USERNAME:-}
+      SMTP_PASSWORD: ${SMTP_PASSWORD:-}
+      SMTP_FROM: ${SMTP_FROM:-noreply@ninerlog.app}
+
+      # Notification checker interval (default: 1h)
+      NOTIFICATION_CHECK_INTERVAL: ${NOTIFICATION_CHECK_INTERVAL:-1h}
+    expose:
+      - "3000"
+    networks:
+      - ninerlog-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
+      interval: 15s
+      timeout: 10s
+      retries: 8
+      start_period: 60s
+
+  # Frontend (nginx reverse proxy + static assets)
+  frontend:
+    image: ghcr.io/fjaeckel/ninerlog-frontend:latest
+    container_name: ninerlog-frontend
+    restart: unless-stopped
+    depends_on:
+      api:
+        condition: service_healthy
+    environment:
+      VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api/v1}
+      VITE_ENV: ${VITE_ENV:-production}
+      VITE_APP_NAME: ${APP_NAME:-${VITE_APP_NAME:-}}
+      BETA_PASSWORD: ${BETA_PASSWORD:-}
+      TLS_DOMAIN: ${TLS_DOMAIN}
+    ports:
+      - "${FRONTEND_PORT:-80}:80"
+      - "${FRONTEND_TLS_PORT:-443}:443"
+    volumes:
+      # Let's Encrypt certs (shared with certbot container)
+      - letsencrypt_certs:/etc/letsencrypt:ro
+      # ACME challenge webroot (shared with certbot container)
+      - certbot_webroot:/var/www/certbot:ro
+    networks:
+      - ninerlog-network
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://127.0.0.1/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+
+  # Let's Encrypt certificate manager
+  # Initial cert request (run once):
+  #   docker compose run --rm certbot certonly --webroot -w /var/www/certbot \
+  #     -d yourdomain.com --agree-tos --email your@email.com
+  # After that, the container auto-renews every 12 hours.
+  certbot:
+    image: certbot/certbot:latest
+    container_name: ninerlog-certbot
+    volumes:
+      - letsencrypt_certs:/etc/letsencrypt
+      - certbot_webroot:/var/www/certbot
+    entrypoint: certbot
+    command: ["renew", "--webroot", "-w", "/var/www/certbot", "--quiet"]
+    depends_on:
+      - frontend
+    restart: "no"
+
+volumes:
+  postgres_data:
+    driver: local
+  postgres_ssl:
+    driver: local
+  letsencrypt_certs:
+    driver: local
+  certbot_webroot:
+    driver: local
+
+networks:
+  ninerlog-network:
+    driver: bridge

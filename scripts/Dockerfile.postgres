@@ -1,0 +1,11 @@
+FROM postgres:18-alpine
+
+# Install openssl for certificate generation
+RUN apk add --no-cache openssl
+
+# Copy SSL init script
+COPY pg-init-ssl.sh /usr/local/bin/pg-init-ssl.sh
+RUN chmod +x /usr/local/bin/pg-init-ssl.sh
+
+ENTRYPOINT ["/usr/local/bin/pg-init-ssl.sh"]
+# Default CMD is inherited from postgres image: ["postgres"]
