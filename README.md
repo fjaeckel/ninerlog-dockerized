@@ -33,6 +33,7 @@ The stack pulls pre-built images from GitHub Container Registry — no build ste
 | **Frontend** | `ghcr.io/fjaeckel/ninerlog-frontend:latest` | 80 / 443 |
 | **PostgreSQL** | Custom (Alpine + auto-TLS) | 5432 (internal) |
 | **Certbot** | `certbot/certbot:latest` | — |
+| **DB Backup** | Custom (Alpine + pg_dump) | — |
 
 ## Architecture
 
@@ -52,6 +53,7 @@ The stack pulls pre-built images from GitHub Container Registry — no build ste
 - **Frontend** serves the React PWA and reverse-proxies `/api/*` to the API container.
 - **PostgreSQL** uses auto-generated self-signed TLS certificates for wire encryption between containers.
 - **Certbot** handles Let's Encrypt certificate renewal for HTTPS.
+- **DB Backup** runs scheduled `pg_dump` snapshots, gzip-compressed, with automatic retention pruning.
 
 ## Configuration
 
@@ -92,6 +94,7 @@ See [docs/UPGRADING.md](docs/UPGRADING.md) for version pinning and migration not
 - [Configuration Reference](docs/CONFIGURATION.md) — All environment variables
 - [HTTPS Setup](docs/HTTPS.md) — Let's Encrypt / TLS configuration
 - [Upgrading](docs/UPGRADING.md) — Pulling new versions, migrations
+- [Backups](docs/BACKUPS.md) — Automated database backups and restore
 - [API Documentation](https://github.com/fjaeckel/ninerlog-api/blob/main/api-spec/openapi.yaml) — OpenAPI 3.1 specification
 
 ## License

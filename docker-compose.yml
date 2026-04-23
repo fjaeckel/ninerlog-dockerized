@@ -122,6 +122,29 @@ services:
       retries: 3
       start_period: 10s
 
+  # Scheduled PostgreSQL backups (compressed)
+  db-backup:
+    build:
+      context: ./scripts
+      dockerfile: Dockerfile.db-backup
+    container_name: ninerlog-db-backup
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      PGHOST: postgres
+      PGPORT: "5432"
+      PGUSER: ${POSTGRES_USER:-ninerlog}
+      PGDATABASE: ${POSTGRES_DB:-ninerlog}
+      PGPASSWORD: ${POSTGRES_PASSWORD}
+      BACKUP_INTERVAL: ${BACKUP_INTERVAL:-21600}
+      BACKUP_RETENTION: ${BACKUP_RETENTION:-30}
+    volumes:
+      - ${BACKUP_PATH:-./backups}:/backups
+    networks:
+      - ninerlog-network
+
   # Let's Encrypt certificate manager
   # Initial cert request (run once):
   #   docker compose run --rm certbot certonly --webroot -w /var/www/certbot \

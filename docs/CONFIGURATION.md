@@ -84,3 +84,13 @@ Data is persisted in a Docker volume (`postgres_data`). The database uses auto-g
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NOTIFICATION_CHECK_INTERVAL` | `1h` | How often to check for notifications (Go duration) |
+
+## Backups
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `BACKUP_PATH` | `./backups` | Host directory for backup files |
+| `BACKUP_INTERVAL` | `21600` | Seconds between backups (default: 6 hours) |
+| `BACKUP_RETENTION` | `30` | Number of compressed backups to keep |
+
+Backups are gzip-compressed `pg_dump` snapshots written to `BACKUP_PATH` on the host. Old backups beyond the retention count are automatically pruned. Point your remote backup tool (rsync, rclone, etc.) at this directory.

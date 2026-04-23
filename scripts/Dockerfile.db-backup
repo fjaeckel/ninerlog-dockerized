@@ -1,0 +1,6 @@
+FROM postgres:18-alpine
+
+COPY db-backup.sh /usr/local/bin/db-backup.sh
+RUN chmod +x /usr/local/bin/db-backup.sh
+
+ENTRYPOINT ["/usr/local/bin/db-backup.sh"]
