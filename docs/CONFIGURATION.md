@@ -47,6 +47,17 @@ Data is persisted in a Docker volume (`postgres_data`). The database uses auto-g
 | `FRONTEND_PORT` | `80` | HTTP port on the host |
 | `FRONTEND_TLS_PORT` | `443` | HTTPS port on the host |
 
+## WebAuthn / Passkeys
+
+Optional passwordless sign-in. Disabled when `WEBAUTHN_RP_ID` is empty.
+See [PASSKEYS.md](PASSKEYS.md) for the full setup guide.
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `WEBAUTHN_RP_ID` | — | Relying-Party ID (registrable domain, e.g. `logbook.example.com`). Empty disables passkeys. |
+| `WEBAUTHN_RP_NAME` | `NinerLog` | Human-readable name shown by the authenticator UI |
+| `WEBAUTHN_RP_ORIGINS` | falls back to `CORS_ORIGIN` | Comma-separated list of full origins (scheme + host + port) |
+
 ## Server
 
 | Variable | Default | Description |

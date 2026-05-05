@@ -65,6 +65,11 @@ services:
       # CORS (must match your domain)
       CORS_ORIGIN: ${CORS_ORIGIN}
 
+      # WebAuthn / Passkeys (optional — leave WEBAUTHN_RP_ID empty to disable)
+      WEBAUTHN_RP_ID: ${WEBAUTHN_RP_ID:-}
+      WEBAUTHN_RP_NAME: ${WEBAUTHN_RP_NAME:-NinerLog}
+      WEBAUTHN_RP_ORIGINS: ${WEBAUTHN_RP_ORIGINS:-}
+
       # Admin
       ADMIN_EMAIL: ${ADMIN_EMAIL:-}
 
