@@ -85,6 +85,10 @@ services:
 
       # Notification checker interval (default: 1h)
       NOTIFICATION_CHECK_INTERVAL: ${NOTIFICATION_CHECK_INTERVAL:-1h}
+
+      # Cloud backups (optional — leave empty to disable the feature)
+      # 32 random bytes, base64-encoded. Generate with: openssl rand -base64 32
+      BACKUP_CREDENTIALS_KEY: ${BACKUP_CREDENTIALS_KEY:-}
     expose:
       - "3000"
     networks:
