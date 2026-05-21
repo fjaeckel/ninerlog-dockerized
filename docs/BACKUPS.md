@@ -2,6 +2,9 @@
 
 NinerLog includes an automated backup service that continuously dumps the PostgreSQL database into compressed files.
 
+> Looking for the per-user "Cloud backups" feature that uploads each
+> user's logbook to their own S3 bucket? See [CLOUD_BACKUPS.md](CLOUD_BACKUPS.md).
+
 ## How It Works
 
 The `db-backup` container runs alongside the other services and:

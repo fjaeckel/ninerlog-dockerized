@@ -96,6 +96,7 @@ See [docs/UPGRADING.md](docs/UPGRADING.md) for version pinning and migration not
 - [Passkeys / WebAuthn](docs/PASSKEYS.md) — Enabling passwordless sign-in
 - [Upgrading](docs/UPGRADING.md) — Pulling new versions, migrations
 - [Backups](docs/BACKUPS.md) — Automated database backups and restore
+- [Cloud Backups](docs/CLOUD_BACKUPS.md) — Per-user encrypted backups to pluggable cloud storage providers
 - [API Documentation](https://github.com/fjaeckel/ninerlog-api/blob/main/api-spec/openapi.yaml) — OpenAPI 3.1 specification
 
 ## License
