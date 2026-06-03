@@ -1,2 +1,6 @@
 .env
 backups/
+
+# Local Docker Compose overrides (e.g. monitoring port bindings) — see docs/MONITORING.md
+docker-compose.override.yml
+docker-compose.override.yaml
