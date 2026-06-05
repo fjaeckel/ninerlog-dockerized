@@ -117,6 +117,10 @@ services:
     ports:
       - "${FRONTEND_PORT:-80}:80"
       - "${FRONTEND_TLS_PORT:-443}:443"
+    expose:
+      # Internal-only nginx stub_status port for the nginx-exporter sidecar.
+      # Never published to the host — see nginx.conf.
+      - "8080"
     volumes:
       # Let's Encrypt certs (shared with certbot container)
       - letsencrypt_certs:/etc/letsencrypt:ro
@@ -130,6 +134,44 @@ services:
       timeout: 10s
       retries: 3
       start_period: 10s
+
+  # Prometheus exporter for the frontend nginx.
+  # Scrapes the internal-only stub_status endpoint and exposes Prometheus
+  # metrics on port 9113. The port is NOT published here — reveal it to your
+  # monitoring host via docker-compose.override.yml, exactly like the API.
+  # See docs/MONITORING.md.
+  nginx-exporter:
+    image: nginx/nginx-prometheus-exporter:1.4.2
+    container_name: ninerlog-nginx-exporter
+    restart: unless-stopped
+    depends_on:
+      frontend:
+        condition: service_healthy
+    command:
+      - "--nginx.scrape-uri=http://frontend:8080/stub_status"
+    expose:
+      - "9113"
+    networks:
+      - ninerlog-network
+
+  # Prometheus exporter for PostgreSQL.
+  # Connects to the database over TLS (sslmode=require, same as the API) and
+  # exposes Prometheus metrics on port 9187. The port is NOT published here —
+  # reveal it to your monitoring host via docker-compose.override.yml, exactly
+  # like the API. See docs/MONITORING.md.
+  postgres-exporter:
+    image: quay.io/prometheuscommunity/postgres-exporter:v0.17.1
+    container_name: ninerlog-postgres-exporter
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      DATA_SOURCE_NAME: "postgresql://${POSTGRES_USER:-ninerlog}:${POSTGRES_PASSWORD}@postgres:5432/${POSTGRES_DB:-ninerlog}?sslmode=require"
+    expose:
+      - "9187"
+    networks:
+      - ninerlog-network
 
   # Scheduled PostgreSQL backups (compressed)
   db-backup:
